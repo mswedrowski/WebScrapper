@@ -1,12 +1,13 @@
 const request = require('request')
 const cheerio = require('cheerio')
 const mongoose = require('mongoose');
+const SkiArea = require('./models/skiarea')
 
 const url = ':)'
 
 
 
-const mongo_uri = 'mongodb+srv:// :)';
+const mongo_uri = 'mongodb+srv:// :) : :) @skiapp-mxoxw.mongodb.net/test?retryWrites=true';
 mongoose.connect(mongo_uri, { useNewUrlParser: true }, function(err) {
   if (err) {
     throw err;
@@ -20,9 +21,10 @@ mongoose.connect(mongo_uri, { useNewUrlParser: true }, function(err) {
 
 var countries = []
 
-function getCountry()
+
+function getCountry(callback)
 {
-    return new Promise((resolve,reject) =>
+    setTimeout( ()=>
     {
         request(url,(error,response,html) =>
         {
@@ -44,27 +46,29 @@ function getCountry()
                 
             });
 
-            resolve();
+            callback();
             
             }
-        });
-    })
+        }
+        
+        )
+        ;
+   
+    },10000)
 }
 
 
+var zones = []
 
 
-function getZone()
+function getZone(callback)
 {
-    return new Promise((resolve,reject) =>
-        {
 
         for( i = 0; i < countries.length;i++)
         {
 
-        country = countries[i]
-
-        countryUrl = country    
+        countryUrl = countries[i]
+  
 
         
         
@@ -76,42 +80,15 @@ function getZone()
                     let sectionLeft = $('.section-left > ')
 
                         
-                        let areas =  sectionLeft.find('div > ul').each((i,el) =>
+                        sectionLeft.find('div > ul').each((i,el) =>
                         {
                             $(el).find('li').each((i,elem) =>
                             {
+                                
                                 areaUrl = ":)" + $(elem).children().attr('href')
 
 
-
-                                request(areaUrl,(error,response,html) =>
-                                {
-                                    if(!error && response.statusCode==200)
-                                    {
-                                        let $ = cheerio.load(html);
-
-                                        let selectionLeft = $('.section-left')
-
-                                        let selectionLeftH = selectionLeft.find(' > header > h1')
-
-                                        let mobileBackMobileOnly = selectionLeftH.find('.mobile-back mobile-only')
-
-                                        let nameA = selectionLeft.find(' > header > h1').text()
-
-                                        let selectionRight = $('.section-right')
-
-                                        let openHoursA = $(selectionRight).find('.box-content>dd').eq(1).text()
-
-                                        let routes = $(selectionRight).find('.dd-dense > ');
-                                    
-                                
-                                    //console.log(selectionLeftH.text())
-                                    //console.log(openHoursA)
-                                    //console.log(routes.text())
-
-                                    }
-                                }
-                            )
+                                zones.push(areaUrl)
 
 
                             }
@@ -122,10 +99,74 @@ function getZone()
                     )
                     
             }
-           
-              })
+            callback();
         
 }
 
 
-getCountry().then(getZone)
+function getData()
+{
+    setTimeout( ()=>
+    {
+    
+        for( i = 0; i < zones.length;i++)
+        {
+            areaUrl = zones[i]
+            request(areaUrl,(error,response,html) =>
+                                    {
+                                        if(!error && response.statusCode==200)
+                                        {
+                                            let $ = cheerio.load(html);
+
+                                            let selectionLeft = $('.section-left')
+
+                                            let selectionLeftH = selectionLeft.find(' > header > h1')
+
+                                            let mobileBackMobileOnly = selectionLeftH.find('.mobile-back mobile-only')
+
+                                            let nameA = selectionLeft.find(' > header > h1').text()
+
+                                            let selectionRight = $('.section-right')
+
+                                            let openHoursA = $(selectionRight).find('.box-content>dd').eq(1).text()
+                                            
+                                            let routes = $(selectionRight).find('.dd-dense >');
+
+                                            let easyR = routes.eq(1).text()
+
+                                            let mediumR = routes.eq(3).text()
+
+                                            let hardR = routes.eq(5).text()
+
+                                            let freeR = routes.eq(7).text()
+                                        
+                                        var skiArea = new SkiArea(
+                                            {
+                                                //country: country,
+                                                name: nameA,
+                                                openHours:openHoursA,
+                                                easyRoute:easyR,
+                                                mediumRoute:mediumR,
+                                                hardRoute:hardR,
+                                                freeRide:freeR
+                                            }
+                                            )
+                                            
+
+
+                                        }
+
+                                     setTimeout( ()=>
+                                        {
+                                        
+                                    skiArea.save().then(() => {console.log('SAVED')})
+                                        },3000);
+
+
+                                    }
+                                )
+        }
+    },20000)
+}
+
+getCountry(()=>{getZone(()=>{getData()})})

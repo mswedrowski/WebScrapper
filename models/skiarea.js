@@ -4,7 +4,7 @@ const Schema = mongoose.Schema
 
 const SkiAreaSchema = new Schema
 ({
-    country:String,
+    //country:String,
     name:String,
     openHours:String,
     easyRoute:String,
@@ -16,6 +16,6 @@ const SkiAreaSchema = new Schema
 
 
 
-const SkiArea = mongoose.model('area',SkiAreaSchema)
+const SkiArea = mongoose.model('skiarea',SkiAreaSchema)
 
-module.exports = Area
+module.exports = SkiArea
